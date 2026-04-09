@@ -1,5 +1,5 @@
 // ▼ URL do Apps Script
-export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyflF1RobdkuZjSh7Duby5KmjE0k2lOJEBOqgHnmeXMOyA8qaivY2teBvliykFfwCS/exec'
+export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyh3l1ScXxAwxKqNZlaZ5gYgiPWEDXI3o5XJVh8od0CTAjfRt5kkfeeToz3ka0nrB3b/exec'
 
 // ▼ URL da planilha Google Sheets (abrir no botão "Ver Planilha" do admin)
 export const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XbGqZAusqMxPQEzF5-BioF9wN3icNPCQMzuavgbUZoA/edit?gid=784267051#gid=784267051'

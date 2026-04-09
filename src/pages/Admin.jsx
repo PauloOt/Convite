@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import PampasDecor from '../components/PampasDecor'
-import { fetchRSVPs } from '../utils/api'
-import { exportToXlsx } from '../utils/exportXlsx'
+import { fetchRSVPs, SHEET_URL } from '../utils/api'
 
 const ADMIN_PIN   = '2027'
 const SESSION_KEY = 'admin_unlocked'
@@ -122,6 +121,7 @@ function EntryCard({ entry }) {
       <div className="flex items-center gap-2 flex-wrap text-[8px] sm:text-[9px] tracking-[1.5px] uppercase font-light" style={{ color: '#4A4844' }}>
         <span>{guestLabel}</span>
         <span style={{ opacity: 0.4 }}>·</span>
+        {entry.telefone && <><span>{entry.telefone}</span><span style={{ opacity: 0.4 }}>·</span></>}
         <span>{dateStr}</span>
       </div>
 
@@ -259,21 +259,23 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Exportar
+        {/* Ver Planilha */}
         <div className="mb-8 sm:mb-10 fade-up delay-300">
-          <button
-            onClick={() => exportToXlsx(entries)}
-            className="w-full py-4 px-6 font-sans font-normal text-[9px] sm:text-[10px] tracking-[3px] sm:tracking-[4px] uppercase cursor-pointer flex items-center justify-center gap-2.5 transition-all"
-            style={{ border: '1px solid #7A5C32', color: '#7A5C32', background: 'transparent', minHeight: '52px' }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#7A5C32'; e.currentTarget.style.color = '#F6F1E7' }}
+          <a
+            href={SHEET_URL || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-4 px-6 font-sans font-normal text-[9px] sm:text-[10px] tracking-[3px] sm:tracking-[4px] uppercase flex items-center justify-center gap-2.5 transition-all no-underline"
+            style={{ border: '1px solid #7A5C32', color: '#7A5C32', background: 'transparent', minHeight: '52px', display: 'flex', opacity: SHEET_URL ? 1 : 0.4, pointerEvents: SHEET_URL ? 'auto' : 'none' }}
+            onMouseEnter={e => { if (SHEET_URL) { e.currentTarget.style.background = '#7A5C32'; e.currentTarget.style.color = '#F6F1E7' } }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#7A5C32' }}
           >
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-              <path d="M6.5 1v8M3 6.5l3.5 3.5 3.5-3.5M1 12h11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M1 1h11M1 5h11M1 9h11M4 1v11M9 1v11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
             </svg>
-            Exportar como XLSX
-          </button>
-        </div> */}
+            Ver Planilha
+          </a>
+        </div>
 
         {/* Separador */}
         {entries.length > 0 && (

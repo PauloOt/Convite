@@ -13,13 +13,13 @@ function Field({ label, children, error, className = '' }) {
         <span className="focus-bar" aria-hidden="true" />
       </div>
       {error && (
-        <p className="mt-2 text-[10px] tracking-[1.5px]" style={{ color: '#b05050' }}>{error}</p>
+        <p className="mt-1.5 text-[9px] tracking-[1px]" style={{ color: '#b05050' }}>{error}</p>
       )}
     </div>
   )
 }
 
-/* ── Ornamento: linha com losango ─────────────────────── */
+/* ── Ornamento ─────────────────────────────────────────── */
 function Ornament({ className = '' }) {
   return (
     <div className={`flex items-center gap-3 ${className}`}>
@@ -30,10 +30,10 @@ function Ornament({ className = '' }) {
   )
 }
 
-/* ── Input de idade: numérico, sem setas, mobile-first ── */
-function AgeInput({ value, onChange, label = 'Idade' }) {
+/* ── Input numérico (idade) ────────────────────────────── */
+function AgeInput({ value, onChange, error, label = 'Idade' }) {
   return (
-    <Field label={label} className="w-[76px] sm:w-[84px] shrink-0">
+    <Field label={label} error={error} className="w-[76px] sm:w-[84px] shrink-0">
       <input
         type="number"
         inputMode="numeric"
@@ -55,44 +55,72 @@ export default function RSVP() {
 
   const [name, setName]             = useState('')
   const [age, setAge]               = useState('')
+  const [telefone, setTelefone]     = useState('')
   const [guests, setGuests]         = useState(0)
   const [companions, setCompanions] = useState([])
-  const [error, setError]           = useState('')
+  const [errors, setErrors]         = useState({})
+
+  /* ── helpers ─────────────────────────────────────────── */
+  function clearErr(key) {
+    setErrors(prev => { const e = { ...prev }; delete e[key]; return e })
+  }
 
   function handleGuestsChange(e) {
     const n = parseInt(e.target.value)
     setGuests(n)
     setCompanions(
-      Array.from({ length: n }, (_, i) => companions[i] || { name: '', age: '' })
+      Array.from({ length: n }, (_, i) => companions[i] || { name: '', age: '', telefone: '' })
     )
   }
 
   function updateCompanion(index, field, value) {
-    setCompanions((prev) => {
+    setCompanions(prev => {
       const next = [...prev]
       next[index] = { ...next[index], [field]: value }
       return next
     })
+    clearErr(`c_${field}_${index}`)
   }
 
+  /* ── validação ────────────────────────────────────────── */
+  function validate() {
+    const errs = {}
+    if (!name.trim())     errs.name     = 'Campo obrigatório'
+    if (!age)             errs.age      = 'Obrigatório'
+    if (!telefone.trim()) errs.telefone = 'Campo obrigatório'
+    companions.forEach((c, i) => {
+      if (!c.name.trim())     errs[`c_name_${i}`]     = 'Campo obrigatório'
+      if (!c.age)             errs[`c_age_${i}`]      = 'Obrigatório'
+      if (!c.telefone.trim()) errs[`c_telefone_${i}`] = 'Campo obrigatório'
+    })
+    return errs
+  }
+
+  /* ── envio ────────────────────────────────────────────── */
   function submit(confirmed) {
-    if (!name.trim()) {
-      setError('Por favor, informe seu nome.')
+    const errs = validate()
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs)
+      // Rola até o primeiro erro
+      setTimeout(() => {
+        document.querySelector('[data-haserror="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 50)
       return
     }
     const entry = {
       id: Date.now(),
       name: name.trim(),
-      age: age ? parseInt(age) : null,
+      age: parseInt(age),
+      telefone: telefone.trim(),
       guests,
-      companionDetails: companions.map((c) => ({
+      companionDetails: companions.map(c => ({
         name: c.name.trim(),
-        age: c.age ? parseInt(c.age) : null,
+        age: parseInt(c.age),
+        telefone: c.telefone.trim(),
       })),
       confirmed,
       createdAt: new Date().toISOString(),
     }
-    // Navega imediatamente; o envio acontece em background
     sessionStorage.setItem('rsvp_last', JSON.stringify({ name: entry.name, confirmed }))
     navigate('/obrigado')
     submitRSVP(entry).catch(console.error)
@@ -111,38 +139,25 @@ export default function RSVP() {
           className="w-full max-w-[560px] flex flex-col items-center justify-between gap-10"
           style={{ minHeight: 'calc(100vh - 112px)' }}
         >
-
-          {/* Supertítulo */}
           <p className="text-[9px] sm:text-[10px] tracking-[8px] sm:tracking-[10px] uppercase font-normal text-sand2 fade-up">
             Save the Date
           </p>
 
-          {/* Nomes + data */}
           <div className="w-full flex flex-col items-center">
-            <span className="font-script block leading-none text-dark fade-up delay-100"
-              style={{ fontSize: 'clamp(68px,16vw,114px)' }}>Bruna</span>
-            <span className="font-script block text-dark opacity-45 fade-up delay-200"
-              style={{ fontSize: 'clamp(30px,7vw,50px)' }}>&amp;</span>
-            <span className="font-script block leading-none text-dark fade-up delay-300"
-              style={{ fontSize: 'clamp(68px,16vw,114px)' }}>Rodrigo</span>
+            <span className="font-script block leading-none text-dark fade-up delay-100" style={{ fontSize: 'clamp(68px,16vw,114px)' }}>Bruna</span>
+            <span className="font-script block text-dark opacity-45 fade-up delay-200" style={{ fontSize: 'clamp(30px,7vw,50px)' }}>&amp;</span>
+            <span className="font-script block leading-none text-dark fade-up delay-300" style={{ fontSize: 'clamp(68px,16vw,114px)' }}>Rodrigo</span>
 
             <Ornament className="w-full max-w-[240px] my-4 sm:my-5 fade-up delay-400" />
 
             <div className="fade-up delay-400">
-              <p className="text-[9px] sm:text-[10px] tracking-[8px] sm:tracking-[10px] font-light text-dark mb-2">
-                J A N E I R O
-              </p>
+              <p className="text-[9px] sm:text-[10px] tracking-[8px] sm:tracking-[10px] font-light text-dark mb-2">J A N E I R O</p>
               <div className="flex items-center justify-center max-w-[280px] sm:max-w-[310px] mx-auto">
-                <span
-                  className="flex-1 text-[9px] sm:text-[10px] tracking-[3px] sm:tracking-[4px] uppercase font-light text-dark px-2 py-2 text-center leading-snug"
-                  style={{ borderTop: '1px solid #b8afa4', borderBottom: '1px solid #b8afa4' }}
-                >Sábado</span>
-                <span className="font-cormorant font-light italic px-4 sm:px-6 leading-none text-dark"
-                  style={{ fontSize: 'clamp(48px,12vw,74px)' }}>16</span>
-                <span
-                  className="flex-1 text-[9px] sm:text-[10px] tracking-[3px] sm:tracking-[4px] uppercase font-light text-dark px-2 py-2 text-center leading-snug"
-                  style={{ borderTop: '1px solid #b8afa4', borderBottom: '1px solid #b8afa4' }}
-                >15:00</span>
+                <span className="flex-1 text-[9px] sm:text-[10px] tracking-[3px] sm:tracking-[4px] uppercase font-light text-dark px-2 py-2 text-center leading-snug"
+                  style={{ borderTop: '1px solid #b8afa4', borderBottom: '1px solid #b8afa4' }}>Sábado</span>
+                <span className="font-cormorant font-light italic px-4 sm:px-6 leading-none text-dark" style={{ fontSize: 'clamp(48px,12vw,74px)' }}>16</span>
+                <span className="flex-1 text-[9px] sm:text-[10px] tracking-[3px] sm:tracking-[4px] uppercase font-light text-dark px-2 py-2 text-center leading-snug"
+                  style={{ borderTop: '1px solid #b8afa4', borderBottom: '1px solid #b8afa4' }}>15:00</span>
               </div>
               <p className="text-[9px] sm:text-[10px] tracking-[8px] sm:tracking-[10px] font-light text-dark mt-2">2 0 2 7</p>
             </div>
@@ -155,7 +170,6 @@ export default function RSVP() {
             </div>
           </div>
 
-          {/* Versículo + CTA */}
           <div className="w-full flex flex-col items-center fade-up delay-600">
             <div className="w-full max-w-[380px] sm:max-w-[400px] pt-5 mb-4" style={{ borderTop: '1px solid #cfc8bc' }}>
               <p className="font-cormorant text-[15px] sm:text-[16px] italic font-light leading-[1.9] text-dark">
@@ -167,7 +181,6 @@ export default function RSVP() {
                 </span>
               </p>
             </div>
-
             <a href="#rsvp"
               className="inline-flex flex-col items-center gap-3 mt-6 sm:mt-8 no-underline text-[8px] sm:text-[9px] tracking-[5px] sm:tracking-[6px] uppercase font-normal text-dark transition-opacity hover:opacity-50"
             >
@@ -178,7 +191,6 @@ export default function RSVP() {
               </svg>
             </a>
           </div>
-
         </div>
       </section>
 
@@ -190,38 +202,57 @@ export default function RSVP() {
       >
         <div className="w-full max-w-[520px] mx-auto">
 
-          {/* Cabeçalho */}
           <div className="text-center mb-12 sm:mb-14">
             <p className="text-[8px] sm:text-[9px] tracking-[5px] sm:tracking-[6px] uppercase font-normal text-sand2 mb-3 sm:mb-4">
               16 · 01 · 2027
             </p>
-            <h2 className="font-cormorant italic font-light text-dark leading-none"
-              style={{ fontSize: 'clamp(32px,7vw,52px)' }}>
+            <h2 className="font-cormorant italic font-light text-dark leading-none" style={{ fontSize: 'clamp(32px,7vw,52px)' }}>
               Confirme sua Presença
             </h2>
             <Ornament className="mt-4 sm:mt-5 max-w-[180px] mx-auto" />
           </div>
 
-          {/* Nome + Idade */}
-          <div className="flex gap-3 sm:gap-4 items-start mb-10 sm:mb-12">
-            <Field label="Nome completo" error={error} className="flex-1 min-w-0">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => { setName(e.target.value); setError('') }}
-                placeholder="Como prefere ser chamado(a)"
-                autoComplete="name"
-                className="input-line"
-                style={{ minHeight: '48px' }}
+          {/* ── Dados do convidado ── */}
+          <div data-haserror={!!(errors.name || errors.age) || undefined}>
+
+            {/* Nome + Idade */}
+            <div className="flex gap-3 sm:gap-4 items-start mb-8">
+              <Field label="Nome completo" error={errors.name} className="flex-1 min-w-0">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => { setName(e.target.value); clearErr('name') }}
+                  placeholder="Como prefere ser chamado(a)"
+                  autoComplete="name"
+                  className="input-line"
+                  style={{ minHeight: '48px' }}
+                />
+              </Field>
+              <AgeInput
+                value={age}
+                error={errors.age}
+                onChange={e => { setAge(e.target.value); clearErr('age') }}
               />
-            </Field>
-            <AgeInput
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-            />
+            </div>
+
+            {/* Telefone */}
+            <div className="mb-10 sm:mb-12" data-haserror={!!errors.telefone || undefined}>
+              <Field label="Telefone" error={errors.telefone}>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={telefone}
+                  onChange={e => { setTelefone(e.target.value); clearErr('telefone') }}
+                  placeholder="(11) 99999-9999"
+                  autoComplete="tel"
+                  className="input-line"
+                  style={{ minHeight: '48px' }}
+                />
+              </Field>
+            </div>
           </div>
 
-          {/* Acompanhantes */}
+          {/* ── Acompanhantes ── */}
           <div className="mb-10 sm:mb-12">
             <Field label="Acompanhantes">
               <div className="relative">
@@ -243,31 +274,47 @@ export default function RSVP() {
             </Field>
           </div>
 
-          {/* Campos por acompanhante */}
+          {/* ── Campos por acompanhante ── */}
           {companions.length > 0 && (
             <div className="mb-10 sm:mb-12 pt-5 pl-3 sm:pl-4" style={{ borderLeft: '1.5px solid #d4cbbe' }}>
               {companions.map((companion, i) => (
-                <div key={i} className="flex gap-3 sm:gap-4 items-start mb-8 sm:mb-10 last:mb-0">
-                  <Field label={`Acompanhante ${i + 1}`} className="flex-1 min-w-0">
+                <div key={i} className="mb-10 last:mb-0">
+                  {/* Nome + Idade */}
+                  <div className="flex gap-3 sm:gap-4 items-start mb-8">
+                    <Field label={`Acompanhante ${i + 1}`} error={errors[`c_name_${i}`]} className="flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={companion.name}
+                        onChange={e => updateCompanion(i, 'name', e.target.value)}
+                        placeholder="Nome completo"
+                        className="input-line"
+                        style={{ minHeight: '48px' }}
+                      />
+                    </Field>
+                    <AgeInput
+                      value={companion.age}
+                      error={errors[`c_age_${i}`]}
+                      onChange={e => updateCompanion(i, 'age', e.target.value)}
+                    />
+                  </div>
+                  {/* Telefone */}
+                  <Field label="Telefone" error={errors[`c_telefone_${i}`]}>
                     <input
-                      type="text"
-                      value={companion.name}
-                      onChange={(e) => updateCompanion(i, 'name', e.target.value)}
-                      placeholder="Nome completo"
+                      type="tel"
+                      inputMode="tel"
+                      value={companion.telefone}
+                      onChange={e => updateCompanion(i, 'telefone', e.target.value)}
+                      placeholder="(11) 99999-9999"
                       className="input-line"
                       style={{ minHeight: '48px' }}
                     />
                   </Field>
-                  <AgeInput
-                    value={companion.age}
-                    onChange={(e) => updateCompanion(i, 'age', e.target.value)}
-                  />
                 </div>
               ))}
             </div>
           )}
 
-          {/* Botões */}
+          {/* ── Botões ── */}
           <div className="mt-8 flex flex-col gap-3">
             <button onClick={() => submit(true)} className="btn-primary">
               Confirmar Presença

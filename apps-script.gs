@@ -25,15 +25,16 @@ function doPost(e) {
 
     const companions = (data.companionDetails || [])
       .filter(c => c.name)
-      .map(c => `${c.name}${c.age ? ` (${c.age})` : ''}`)
+      .map(c => `${c.name}${c.age ? ` (${c.age})` : ''}${c.telefone ? ` [${c.telefone}]` : ''}`)
       .join(', ')
 
     sheet.appendRow([
       data.id,
       data.name,
-      data.age    || '',
+      data.age       || '',
+      data.telefone  || '',
       data.confirmed ? 'Confirmado' : 'Recusou',
-      data.guests || 0,
+      data.guests    || 0,
       companions,
       new Date(data.createdAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
     ])
@@ -59,15 +60,16 @@ function doGet(e) {
       id:        r[0],
       name:      r[1],
       age:       r[2] || null,
-      confirmed: r[3] === 'Confirmado',
-      guests:    r[4] || 0,
-      companionDetails: r[5]
-        ? String(r[5]).split(', ').filter(Boolean).map(c => {
-            const m = c.match(/^(.+?)(?:\s*\((\d+)\))?$/)
-            return m ? { name: m[1].trim(), age: m[2] ? parseInt(m[2]) : null } : { name: c, age: null }
+      telefone:  r[3] || null,
+      confirmed: r[4] === 'Confirmado',
+      guests:    r[5] || 0,
+      companionDetails: r[6]
+        ? String(r[6]).split(', ').filter(Boolean).map(c => {
+            const m = c.match(/^(.+?)(?:\s*\((\d+)\))?(?:\s*\[([^\]]+)\])?$/)
+            return m ? { name: m[1].trim(), age: m[2] ? parseInt(m[2]) : null, telefone: m[3] || null } : { name: c, age: null, telefone: null }
           })
         : [],
-      createdAt: r[6]
+      createdAt: r[7]
     }))
 
     return json(entries)
@@ -87,8 +89,8 @@ function getOrCreateSheet() {
 
   // Cria cabeçalho se a aba estiver vazia
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(['ID', 'Nome', 'Idade', 'Status', 'Acompanhantes', 'Detalhes Acomp.', 'Data/Hora'])
-    sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#1C1C1A').setFontColor('#F6F1E7')
+    sheet.appendRow(['ID', 'Nome', 'Idade', 'Telefone', 'Status', 'Acompanhantes', 'Detalhes Acomp.', 'Data/Hora'])
+    sheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#1C1C1A').setFontColor('#F6F1E7')
     sheet.setFrozenRows(1)
   }
 

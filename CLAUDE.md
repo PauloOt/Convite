@@ -1,7 +1,8 @@
 # Projeto: Site de RSVP — Casamento Bruna & Rodrigo
 
 ## Status
-Site completo e funcional. Todos os arquivos já foram criados.
+Site completo, em produção no GitHub Pages.
+Repositório: https://github.com/PauloOt/ConviteBruna
 
 ---
 
@@ -12,7 +13,19 @@ Site completo e funcional. Todos os arquivos já foram criados.
 | **Noivos** | Bruna & Rodrigo |
 | **Data** | Sábado, 16 de Janeiro de 2027 |
 | **Horário** | 15:00 |
+| **Local** | Cotia · SP (endereço completo no convite) |
 | **Verso bíblico** | "Para que todos vejam, e saibam, e considerem e juntamente entendam que a mão do Senhor fez isto." — Isaías 41:20 |
+
+---
+
+## Stack
+
+- **React 18** + **Vite 5**
+- **Tailwind CSS 3** (utilitários + classes customizadas em `src/index.css`)
+- **React Router v6** com `HashRouter` (compatível com GitHub Pages sem config de servidor)
+- **Google Sheets** como banco de dados via **Google Apps Script** Web App
+- **SheetJS (xlsx 0.18.5)** para exportação
+- Fontes: Google Fonts — Great Vibes, Cormorant Garamond, Montserrat
 
 ---
 
@@ -20,115 +33,144 @@ Site completo e funcional. Todos os arquivos já foram criados.
 
 ```
 D:\Bruna\
-├── index.html       # Página pública de RSVP (hero + formulário)
-├── obrigado.html    # Tela de agradecimento pós-confirmação
-├── admin.html       # Painel administrativo (protegido por PIN)
-├── style.css        # Todos os estilos globais
-├── app.js           # Lógica do formulário, localStorage, WhatsApp
-├── admin.js         # Lógica do painel admin
-└── preview.webp     # Referência visual (save the date original)
+├── index.html              # Entrada do Vite
+├── apps-script.gs          # Código do Google Apps Script (copiar no GAS editor)
+├── vite.config.js          # base: './' para GH Pages
+├── tailwind.config.js      # Cores e fontes customizadas
+├── postcss.config.js
+├── package.json            # Script "deploy" usa gh-pages
+├── preview.webp            # Referência visual do save the date
+└── src/
+    ├── main.jsx
+    ├── App.jsx             # Rotas: / | /obrigado | /admin
+    ├── index.css           # Tailwind + classes globais (input-line, btn-primary, fade-up…)
+    ├── components/
+    │   └── PampasDecor.jsx # SVG decorativo nos cantos (fixo, responsivo)
+    ├── pages/
+    │   ├── RSVP.jsx        # Hero + formulário de confirmação
+    │   ├── Obrigado.jsx    # Tela pós-confirmação
+    │   └── Admin.jsx       # Painel protegido por PIN
+    └── utils/
+        ├── api.js          # submitRSVP() e fetchRSVPs() — integração Google Sheets
+        ├── storage.js      # helpers localStorage (legado, não usado nas páginas principais)
+        └── exportXlsx.js   # Exportação XLSX via SheetJS
 ```
 
 ---
 
-## Identidade Visual Implementada
+## Rotas
 
-| Elemento | Detalhe |
+| Rota | Página |
+|---|---|
+| `/#/` | Formulário de RSVP público |
+| `/#/obrigado` | Agradecimento pós-confirmação |
+| `/#/admin` | Painel administrativo (PIN: `2027`) |
+
+---
+
+## Identidade Visual
+
+| Elemento | Valor |
 |---|---|
 | **Fundo** | Creme `#F6F1E7` |
-| **Texto** | Quase preto `#1C1C1A` |
-| **Acento** | Areia/dourado `#C4A882`, `#B8956A` |
-| **Fonte cursiva** | *Great Vibes* (nomes dos noivos) |
-| **Fonte serif** | *Cormorant Garamond* (números, itálicos) |
-| **Fonte sans** | *Montserrat 300* (rótulos, caps espaçados) |
-| **Decoração** | Capim-dos-pampas em SVG inline, fixo nos cantos superior-direito e inferior-esquerdo |
-| **Sem moldura** | Layout de site (hero section), não cartão impresso |
+| **Texto principal** | `#1C1C1A` |
+| **Dourado (texto)** | `#7A5C32` — valor em `tailwind.config.js` como `sand2` |
+| **Dourado (decoração)** | `#C4A882` — `sand` |
+| **Fonte cursiva** | *Great Vibes* — nomes dos noivos |
+| **Fonte serif** | *Cormorant Garamond* — números, itálicos |
+| **Fonte sans** | *Montserrat 300* — labels, botões |
+| **Decoração** | Capim-dos-pampas em SVG inline, fixo nos cantos (classe `.pampas-svg`) |
+| **Grain** | Textura sutil via `body::after` com SVG de ruído (opacity 3.5%) |
+
+> **Não alterar** a paleta, as fontes nem o SVG dos pampas sem necessidade — são fiéis ao save the date original (`preview.webp`).
 
 ---
 
-## Layout das Páginas
+## Formulário de RSVP (`RSVP.jsx`)
 
-### `index.html` — RSVP público
-- **Hero section** (100vh): data pequena no topo, nomes grandes em cursiva, faixa de data (Sábado | 16 | 15:00), versículo, indicador de scroll
-- **Seção de formulário**: campos de nome, acompanhantes (select), mensagem opcional, botão "Confirmar Presença" + link "Não poderei comparecer"
+Campos:
+1. **Nome completo** + **Idade** (na mesma linha — `flex`, campo de idade `w-[76px]`)
+2. **Acompanhantes** (select 0–5)
+3. Para cada acompanhante: **Nome** + **Idade** (mesma linha, indent com borda esquerda)
 
-### `obrigado.html` — Agradecimento
-- Mensagem personalizada com nome do convidado
-- Texto diferente para confirmados vs. recusados
-- Link para notificar a Bruna via WhatsApp
-
-### `admin.html` — Painel
-- PIN de entrada (ver configuração abaixo)
-- Contador de pessoas totais confirmadas
-- Placar confirmados × recusados
-- Lista completa com nome, status, acompanhantes, data/hora e mensagem
+Inputs:
+- `type="number" inputMode="numeric" pattern="[0-9]*"` nos campos de idade → teclado numérico no celular
+- Setas do `type=number` removidas via CSS (`-webkit-appearance: none`)
+- `min-height: 48px` em todos os inputs e botões (touch targets)
+- Animação de foco: barra `.focus-bar` escala da esquerda via `scaleX`
 
 ---
 
-## Configurações
+## Integração Google Sheets
 
-### WhatsApp (`app.js`, linha 3)
+**Arquivo de configuração:** `src/utils/api.js`
+
 ```js
-const WHATSAPP_NUMBER = '5511986755485';
-```
-Número da Bruna já configurado. Alterar se necessário.
-
-### PIN do Admin (`admin.js`, linha 2)
-```js
-const ADMIN_PIN = '2027';
+export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycb.../exec'
 ```
 
-### Chave do localStorage (`app.js`, linha 6)
-```js
-const STORAGE_KEY = 'rsvp_bruna_rodrigo';
+**Fluxo POST (confirmação):**
+- `fetch` com `mode: 'no-cors'` — sem preflight CORS, dados chegam na planilha
+- Navegação para `/obrigado` acontece imediatamente (fire-and-forget)
+
+**Fluxo GET (admin):**
+- `fetch` normal com `?pin=2027` na query string
+- O Apps Script valida o PIN antes de retornar os dados
+- Admin mostra loading, erro com botão "Tentar novamente" e botão "↻ Atualizar lista"
+
+**Apps Script (`apps-script.gs`):**
+- `doPost(e)` — recebe JSON, grava linha na aba "RSVPs"
+- `doGet(e)` — valida PIN, retorna array JSON de todas as respostas
+- Cria cabeçalho automaticamente na primeira execução
+- Deploy: *Execute as: Me / Who has access: Anyone*
+
+---
+
+## Estrutura de cada entrada no Google Sheets
+
+| Coluna | Conteúdo |
+|---|---|
+| ID | `Date.now()` timestamp |
+| Nome | Nome completo |
+| Idade | Número ou vazio |
+| Status | `Confirmado` ou `Recusou` |
+| Acompanhantes | Número (0–5) |
+| Detalhes Acomp. | `"Nome (idade), Nome (idade)"` |
+| Data/Hora | Horário de Brasília |
+
+---
+
+## Painel Admin (`Admin.jsx`)
+
+- PIN local: `'2027'` (constante `ADMIN_PIN`)
+- PIN também validado no Apps Script (dupla proteção)
+- Exibe: contador total de pessoas, cards confirmados vs recusados
+- Cada card tem borda colorida: verde = confirmado, vermelho = recusou
+- Botão **Exportar como XLSX** — gera `confirmacoes-bruna-rodrigo.xlsx` com duas abas
+- Sessão mantida via `sessionStorage` enquanto o browser estiver aberto
+
+---
+
+## Deploy
+
+```bash
+npm run dev        # desenvolvimento local
+npm run build      # gera pasta dist/
+npm run deploy     # build + push para branch gh-pages (usa pacote gh-pages)
 ```
 
----
+GitHub Pages configurado em: **Settings → Pages → Branch: gh-pages / (root)**
 
-## Como os Dados Fluem
-
-1. Convidado preenche o formulário em `index.html`
-2. `app.js` salva a entrada no `localStorage` (chave `rsvp_bruna_rodrigo`)
-3. Os dados da resposta mais recente são passados via `sessionStorage` para `obrigado.html`
-4. `obrigado.html` exibe mensagem personalizada + link WhatsApp para a Bruna
-5. `admin.html` lê todo o `localStorage` e exibe o painel completo
+URL publicada: `https://pauloot.github.io/ConviteBruna/`
 
 ---
 
-## Estrutura de cada entrada no localStorage
+## PIN do Admin
 
-```json
-{
-  "id": 1700000000000,
-  "name": "Nome do Convidado",
-  "guests": 1,
-  "message": "Mensagem opcional",
-  "confirmed": true,
-  "createdAt": "2026-11-15T14:30:00.000Z"
-}
+```
+2027
 ```
 
----
-
-## Stack
-
-- HTML + CSS + JavaScript puro (sem frameworks)
-- Persistência: `localStorage` do navegador
-- Notificação: link `wa.me` nativo (sem APIs pagas)
-- Fontes: Google Fonts (Great Vibes, Cormorant Garamond, Montserrat)
-- Hospedagem sugerida: qualquer hosting estático (Netlify, GitHub Pages, Vercel)
-
----
-
-## O que NÃO alterar sem necessidade
-
-- A paleta de cores — é fiel ao save the date
-- As fontes — definem toda a estética boho
-- O SVG do capim-dos-pampas — foram desenhados manualmente com coordenadas calculadas
-- A estrutura de hero section (não voltar para o layout de cartão com moldura)
-
----
-
-## Referência Visual
-
-Ver `preview.webp` para referência de paleta, tipografia e decoração do save the date original.
+Está hardcoded em dois lugares — alterar em ambos se quiser mudar:
+1. `src/pages/Admin.jsx` → constante `ADMIN_PIN`
+2. `apps-script.gs` → constante `ADMIN_PIN`

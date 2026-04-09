@@ -259,7 +259,7 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Exportar */}
+        {/* Exportar
         <div className="mb-8 sm:mb-10 fade-up delay-300">
           <button
             onClick={() => exportToXlsx(entries)}
@@ -273,7 +273,7 @@ export default function Admin() {
             </svg>
             Exportar como XLSX
           </button>
-        </div>
+        </div> */}
 
         {/* Separador */}
         {entries.length > 0 && (

@@ -87,11 +87,21 @@ function getOrCreateSheet() {
     sheet = ss.insertSheet(SHEET_NAME)
   }
 
-  // Cria cabeçalho se a aba estiver vazia
   if (sheet.getLastRow() === 0) {
+    // Aba vazia — cria cabeçalho completo
     sheet.appendRow(['ID', 'Nome', 'Idade', 'Telefone', 'Status', 'Acompanhantes', 'Detalhes Acomp.', 'Data/Hora'])
     sheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#1C1C1A').setFontColor('#F6F1E7')
     sheet.setFrozenRows(1)
+  } else {
+    // Aba já existe — verifica se coluna Telefone está presente
+    const header = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+    if (!header.includes('Telefone')) {
+      // Insere coluna Telefone na posição 4 (após Idade)
+      sheet.insertColumnAfter(3)
+      sheet.getRange(1, 4).setValue('Telefone')
+      const totalCols = sheet.getLastColumn()
+      sheet.getRange(1, 1, 1, totalCols).setFontWeight('bold').setBackground('#1C1C1A').setFontColor('#F6F1E7')
+    }
   }
 
   return sheet
